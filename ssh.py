@@ -18,6 +18,8 @@ port = int(config['TARGET']['PORT'])
 # get config information(new password) and choose random password
 newPasswordSplit = config['NEW']['PASSWORD'].split(',')
 newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
+while newPassword == password :
+    newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
 
 # get config information(storing name and location)
 fileName = config['STORE']['FILENAME']
