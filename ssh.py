@@ -155,11 +155,22 @@ if brutalChangeYesNo :
         interact = connection.invoke_shell()
 
         # read information and send text
-        resp = interact.recv(9999)
-        resp = interact.recv(9999)
-        resp = interact.recv(9999)
-        interact.send(newPassword + '\n')
-        resp = interact.recv(9999)
+        buff = ''
+        while not buff.endswith("UNIX password: '"):
+            resp = interact.recv(9999)
+            buff += str(resp)
+        interact.send(password + '\n')
+        
+        buff = ''
+        while not buff.endswith("New password: '"):
+            resp = interact.recv(9999)
+            buff += str(resp)
+        interact.send(newPassword + '\n')        
+
+        buff = ''
+        while not buff.endswith("Retype new password: '"):
+            resp = interact.recv(9999)
+            buff += str(resp)
         interact.send(newPassword + '\n')
         resp = interact.recv(9999)
 
