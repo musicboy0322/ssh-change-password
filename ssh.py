@@ -1,6 +1,9 @@
 import configparser
 import logging
 import paramiko
+import win32com.client as win32
+from datetime import datetime, timedelta
+import re
 
 # import config file
 config = configparser.ConfigParser()
@@ -19,43 +22,58 @@ newPassword = config['NEW']['PASSWORD']
 fileName = config['STORE']['FILENAME']
 location = config['STORE']['LOCATION']
 
-try :
-    # create a transport instance
-    trans = paramiko.Transport((hostname, port))
+outlook = win32.Dispatch('outlook.application')
+mapi = outlook.GetNamespace("MAPI")
 
-    # create connection and specify it in sshclient
-    trans.connect(username=username, password=password)
-    ssh = paramiko.SSHClient()
-    ssh._transport = trans
+result = []
+for num in range(len(mapi.Folders)) :
+    received_dt = datetime.now() - timedelta(days = 1)
+    received_dt = received_dt.strftime('%m/%d/%Y %H:%M')
+    messages = mapi.Folders(num + 1).Folders('收件匣').Items
+    messages = messages.Restrict("[ReceivedTime] >='" + received_dt + "'")
+    for msg in list(messages):
+        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) <= 0:
+            result.append(str(msg))
 
-    # excute command
-    stdin, stdout, stderr = ssh.exec_command('passwd')
-    stdin.write(password + '\n')
-    stdin.write(password + '\n')
-    stdin.flush()
-    stdout.channel.set_combine_stderr(True)
-    print(stdout.read().decode())
+if len(result) > 0 :
+    try :
+        # create a transport instance
+        trans = paramiko.Transport((hostname, port))
 
-    # close connection
-    trans.close()
+        # create connection and specify it in sshclient
+        trans.connect(username=username, password=password)
+        ssh = paramiko.SSHClient()
+        ssh._transport = trans
 
-    # setting log file's detail and location
-    if len(location) == 0 :
-        logging.basicConfig(
-            filename = fileName,
-            format = '%(asctime)s %(levelname)s %(message)s',
-            level = logging.INFO
-        )
-    else :
-        logging.basicConfig(
-            filename = location + '/' + fileName,
-            format = '%(asctime)s %(levelname)s %(message)s',
-            level = logging.INFO
-        )
+        # excute command
+        stdin, stdout, stderr = ssh.exec_command('passwd')
+        stdin.write(newPassword + '\n')
+        stdin.write(newPassword + '\n')
+        stdin.flush()
+        stdout.channel.set_combine_stderr(True)
+        print(stdout.read().decode())
 
-    logging.info(f'Your new password is {newPassword}')
+        # close connection
+        trans.close()
 
-except Exception as e:
-    print(e)
+        # setting log file's detail and location
+        if len(location) == 0 :
+            logging.basicConfig(
+                filename = fileName,
+                format = '%(asctime)s %(levelname)s %(message)s',
+                level = logging.INFO
+            )
+        else :
+            logging.basicConfig(
+                filename = location + '/' + fileName,
+                format = '%(asctime)s %(levelname)s %(message)s',
+                level = logging.INFO
+            )
 
+        logging.info(f'Your new password is {newPassword}')
+
+    except Exception as e:
+        print(e)
+else:
+    print('No yet to change')
 
