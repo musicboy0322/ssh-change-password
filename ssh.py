@@ -79,25 +79,14 @@ if changeYesNo :
 
         logging.info(f'Your new password : {newPassword}')
 
-        # sending email about the result of changing password
-        mail = outlook.CreateItem(0)
-        mail.Subject = 'Auto Changing Password Result'
-        mail.Body = f'Your New Password : {newPassword}'
-        mail.To = email
-        mail.Send()
-        print('Sending successful')
-
-    except Exception as e:
-        print(e)
-else:
-    try:
-        # sending email about the result of changing password
-        mail = outlook.CreateItem(0)
-        mail.Subject = 'Auto Changing Password Result'
-        mail.Body = 'No Yet To Change'
-        mail.To = email
-        mail.Send()
-        print("Sending Successful")
     except Exception as e:
         print(e)
 
+def sendingEmail():
+    # sending email about the result of changing password
+    mail = outlook.CreateItem(0)
+    mail.Subject = 'Auto Changing Password Result'
+    mail.Body = f'Your New Password : {newPassword}'
+    mail.To = email
+    mail.Send()
+    print('Sending successful')
