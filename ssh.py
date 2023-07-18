@@ -30,7 +30,7 @@ email = config['SEND']['EMAIL']
 outlook = win32.Dispatch('outlook.application')
 mapi = outlook.GetNamespace("MAPI")
 
-result = []
+chaneYesNo = False;
 for num in range(len(mapi.Folders)) :
     received_dt = datetime.now() - timedelta(days = 20)
     received_dt = received_dt.strftime('%m/%d/%Y %H:%M')
@@ -38,9 +38,9 @@ for num in range(len(mapi.Folders)) :
     messages = messages.Restrict("[ReceivedTime] >='" + received_dt + "'")
     for msg in list(messages):
         if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) <= 0:
-            result.append(str(msg))
+            changeYesNo = True;
 
-if len(result) > 0 :
+if changeYesNo :
     try :
         # create a transport instance
         trans = paramiko.Transport((hostname, port))
