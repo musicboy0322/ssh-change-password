@@ -42,7 +42,7 @@ mapi = outlook.GetNamespace("MAPI")
 # select emails in 24 hours and judge whether there is expire password or not
 changeYesNo = False
 for num in range(len(mapi.Folders)) :
-    received_dt = datetime.now() - timedelta(days = 20)
+    received_dt = datetime.now() - timedelta(days = 1)
     received_dt = received_dt.strftime('%m/%d/%Y %H:%M')
     messages = mapi.Folders(num + 1).Folders('收件匣').Items
     messages = messages.Restrict("[ReceivedTime] >='" + received_dt + "'")
@@ -85,7 +85,7 @@ if changeYesNo :
                 level = logging.INFO
             )
 
-        logging.info(f'Your new password : {newPassword}')
+        logging.info('all authentication tokens updated successfully.')
 
         # synchronize changing config file's password information
         config.set('TARGET', 'PASSWORD', newPassword)
@@ -114,6 +114,22 @@ if changeYesNo :
     except Exception as e:
         print(e)
 else:
+    # setting log file's detail and location
+    if len(logLocation) == 0 :
+        logging.basicConfig(
+            filename = logFileName,
+            format = '%(asctime)s %(levelname)s %(message)s',
+            level = logging.INFO
+        )
+    else :
+        logging.basicConfig(
+            filename = logLocation + '/' + logFileName,
+            format = '%(asctime)s %(levelname)s %(message)s',
+            level = logging.INFO
+        )
+
+    logging.info('Not yet to change')
+
     # pop result window
     window = tk.Tk()
     window.title("Result")
