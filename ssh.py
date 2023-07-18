@@ -41,15 +41,19 @@ mapi = outlook.GetNamespace("MAPI")
 
 # select emails in 24 hours and judge whether there is expire password or not
 changeYesNo = False
+brutalChangeYesNo = False
 for num in range(len(mapi.Folders)) :
-    received_dt = datetime.now() - timedelta(days = 1)
+    received_dt = datetime.now() - timedelta(days = 30)
     received_dt = received_dt.strftime('%m/%d/%Y %H:%M')
     messages = mapi.Folders(num + 1).Folders('收件匣').Items
     messages = messages.Restrict("[ReceivedTime] >='" + received_dt + "'")
     for msg in list(messages):
-        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) <= 0:
+        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) == 0:
             changeYesNo = True
+        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) <= 0:
+            brutalChangeYesNo = True
 
+# 0 days
 if changeYesNo :
     try :
         # create a transport instance
@@ -138,6 +142,96 @@ else:
     pop.pack()
     window.mainloop()
 
+# negative day
+if brutalChangeYesNo :
+    try :
+        # create a sshclient instance
+        connection = paramiko.SSHClient()
+
+        # create connection and specify it in sshclient
+        connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        connection.load_system_host_keys()
+        connection.connect(hostname=hostname, port=port, username=username, password=password)
+        interact = connection.invoke_shell()
+
+        # read information and send text
+        resp = interact.recv(9999)
+        resp = interact.recv(9999)
+        resp = interact.recv(9999)
+        interact.send(newPassword + '\n')
+        resp = interact.recv(9999)
+        interact.send(newPassword + '\n')
+        resp = interact.recv(9999)
+
+        # close connection
+        connection.close()
+
+        # setting log file's detail and location
+        if len(logLocation) == 0 :
+            logging.basicConfig(
+                filename = logFileName,
+                format = '%(asctime)s %(levelname)s %(message)s',
+                level = logging.INFO
+            )
+        else :
+            logging.basicConfig(
+                filename = logLocation + '/' + logFileName,
+                format = '%(asctime)s %(levelname)s %(message)s',
+                level = logging.INFO
+            )
+
+        logging.info('all authentication tokens updated successfully.')
+
+        # synchronize changing config file's password information
+        config.set('TARGET', 'PASSWORD', newPassword)
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+        
+        # write change result into csvfile
+        if os.path.exists(csvFileName):
+            with open(csvFileName, 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow([date.today(), hostname, port, username, newPassword])
+        else:
+            with open(csvFileName, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['Date', 'Hostname', 'Port', 'Username', 'NewPassword'])
+                writer.writerow([date.today(), hostname, port, username, newPassword])
+        
+        # pop result window
+        window = tk.Tk()
+        window.title("Result")
+        window.geometry('250x90')
+        pop = tk.Label(window,text="Password has changed", font=("Arial", 12), width=20,height=10)
+        pop.pack()
+        window.mainloop()
+
+    except Exception as e:
+        print(e)
+else:
+    # setting log file's detail and location
+    if len(logLocation) == 0 :
+        logging.basicConfig(
+            filename = logFileName,
+            format = '%(asctime)s %(levelname)s %(message)s',
+            level = logging.INFO
+        )
+    else :
+        logging.basicConfig(
+            filename = logLocation + '/' + logFileName,
+            format = '%(asctime)s %(levelname)s %(message)s',
+            level = logging.INFO
+        )
+
+    logging.info('Not yet to change')
+
+    # pop result window
+    window = tk.Tk()
+    window.title("Result")
+    window.geometry('250x90')
+    pop = tk.Label(window,text="Not yet to change", font=("Arial", 12), width=20,height=10)
+    pop.pack()
+    window.mainloop()
 
 
 
