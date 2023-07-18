@@ -25,9 +25,12 @@ newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
 while newPassword == password :
     newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
 
-# get config information(storing name and location)
-fileName = config['LOG']['FILENAME']
-location = config['LOG']['LOCATION']
+# get config information(storing log name and location)
+logFileName = config['LOG']['FILENAME']
+logLocation = config['LOG']['LOCATION']
+
+# get config information(storing csv name)
+csvFileName = config['CSV']['FILENAME']
 
 # get config information(sending email)
 email = config['SEND']['EMAIL']
@@ -69,15 +72,15 @@ if changeYesNo :
         trans.close()
 
         # setting log file's detail and location
-        if len(location) == 0 :
+        if len(logLocation) == 0 :
             logging.basicConfig(
-                filename = fileName,
+                filename = logFileName,
                 format = '%(asctime)s %(levelname)s %(message)s',
                 level = logging.INFO
             )
         else :
             logging.basicConfig(
-                filename = location + '/' + fileName,
+                filename = logLocation + '/' + logFileName,
                 format = '%(asctime)s %(levelname)s %(message)s',
                 level = logging.INFO
             )
@@ -90,12 +93,12 @@ if changeYesNo :
             config.write(configfile)
         
         # write change result into csvfile
-        if os.path.exists('output.csv'):
-            with open('output.csv', 'a', newline='') as csvfile:
+        if os.path.exists(csvFileName):
+            with open(csvFileName, 'a', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow([date.today(), hostname, port, username, newPassword])
         else:
-            with open('output.csv', 'w', newline='') as csvfile:
+            with open(csvFileName, 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(['Date', 'Hostname', 'Port', 'Username', 'NewPassword'])
                 writer.writerow([date.today(), hostname, port, username, newPassword])
