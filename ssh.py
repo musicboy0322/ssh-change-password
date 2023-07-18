@@ -5,6 +5,9 @@ import win32com.client as win32
 from datetime import datetime, timedelta
 import random
 import tkinter as tk
+import csv
+import os 
+from datetime import date
 
 # import config file
 config = configparser.ConfigParser()
@@ -23,8 +26,8 @@ while newPassword == password :
     newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
 
 # get config information(storing name and location)
-fileName = config['STORE']['FILENAME']
-location = config['STORE']['LOCATION']
+fileName = config['LOG']['FILENAME']
+location = config['LOG']['LOCATION']
 
 # get config information(sending email)
 email = config['SEND']['EMAIL']
@@ -33,9 +36,10 @@ email = config['SEND']['EMAIL']
 outlook = win32.Dispatch('outlook.application')
 mapi = outlook.GetNamespace("MAPI")
 
+# select emails in 24 hours and judge whether there is expire password or not
 changeYesNo = False
 for num in range(len(mapi.Folders)) :
-    received_dt = datetime.now() - timedelta(days = 1)
+    received_dt = datetime.now() - timedelta(days = 20)
     received_dt = received_dt.strftime('%m/%d/%Y %H:%M')
     messages = mapi.Folders(num + 1).Folders('收件匣').Items
     messages = messages.Restrict("[ReceivedTime] >='" + received_dt + "'")
@@ -84,13 +88,24 @@ if changeYesNo :
         config.set('TARGET', 'PASSWORD', newPassword)
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
-
+        
+        # write change result into csvfile
+        if os.path.exists('output.csv'):
+            with open('output.csv', 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow([date.today(), hostname, port, username, newPassword])
+        else:
+            with open('output.csv', 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['Date', 'Hostname', 'Port', 'Username', 'NewPassword'])
+                writer.writerow([date.today(), hostname, port, username, newPassword])
+        
         # pop result window
         window = tk.Tk()
         window.title("Result")
         window.geometry('250x90')
-        l = tk.Label(window,text="Password has changed", font=("Arial", 12), width=20,height=10)
-        l.pack()
+        pop = tk.Label(window,text="Password has changed", font=("Arial", 12), width=20,height=10)
+        pop.pack()
         window.mainloop()
 
     except Exception as e:
@@ -100,8 +115,8 @@ else:
     window = tk.Tk()
     window.title("Result")
     window.geometry('250x90')
-    l = tk.Label(window,text="Not yet to change", font=("Arial", 12), width=20,height=10)
-    l.pack()
+    pop = tk.Label(window,text="Not yet to change", font=("Arial", 12), width=20,height=10)
+    pop.pack()
     window.mainloop()
 
 
