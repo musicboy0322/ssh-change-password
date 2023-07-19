@@ -1,13 +1,11 @@
+# import things
 import configparser
-import logging
 import paramiko
 import win32com.client as win32
 from datetime import datetime, timedelta
 import random
-import tkinter as tk
-import csv
-import os 
 from datetime import date
+from functions import popResultWindow, logInformation, writeCsv, rewriteIni
 
 # import config file
 config = configparser.ConfigParser()
@@ -48,24 +46,25 @@ for num in range(len(mapi.Folders)) :
     messages = mapi.Folders(num + 1).Folders('收件匣').Items
     messages = messages.Restrict("[ReceivedTime] >='" + received_dt + "'")
     for msg in list(messages):
-        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) == 0:
-            changeYesNo = True
         if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) <= 0:
+            changeYesNo = True
+        '''
+        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) < 0:
             brutalChangeYesNo = True
+        '''
 
 # 0 days
 if changeYesNo :
     try :
         # create a transport instance
-        trans = paramiko.Transport((hostname, port))
+        connection = paramiko.SSHClient()
 
         # create connection and specify it in sshclient
-        trans.connect(username=username, password=password)
-        ssh = paramiko.SSHClient()
-        ssh._transport = trans
+        connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        connection.connect(hostname=hostname, port=port, username=username, password=password)
 
         # excute command
-        stdin, stdout, stderr = ssh.exec_command('passwd')
+        stdin, stdout, stderr = connection.exec_command('passwd')
         stdin.write(newPassword + '\n')
         stdin.write(newPassword + '\n')
         stdin.flush()
@@ -73,84 +72,31 @@ if changeYesNo :
         print(stdout.read().decode())
 
         # close connection
-        trans.close()
+        connection.close()
 
-        # setting log file's detail and location
-        if len(logLocation) == 0 :
-            logging.basicConfig(
-                filename = logFileName,
-                format = '%(asctime)s %(levelname)s %(message)s',
-                level = logging.INFO
-            )
-        else :
-            logging.basicConfig(
-                filename = logLocation + '/' + logFileName,
-                format = '%(asctime)s %(levelname)s %(message)s',
-                level = logging.INFO
-            )
-
-        logging.info('all authentication tokens updated successfully.')
+        # setting log file's detail, location, text
+        logInformation(logLocation, logFileName, 'all authentication tokens updated successfully')
 
         # synchronize changing config file's password information
-        config.set('TARGET', 'PASSWORD', newPassword)
-        with open('config.ini', 'w') as configfile:
-            config.write(configfile)
+        rewriteIni(config, newPassword)
         
         # write change result into csvfile
-        if os.path.exists(csvFileName):
-            with open(csvFileName, 'a', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow([date.today(), hostname, port, username, newPassword])
-        else:
-            with open(csvFileName, 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(['Date', 'Hostname', 'Port', 'Username', 'NewPassword'])
-                writer.writerow([date.today(), hostname, port, username, newPassword])
-        
+        writeCsv(csvFileName, date.today(), hostname, port, username, newPassword)
+
         # pop result window
-        window = tk.Tk()
-        window.title("Result")
-        window.geometry('250x90')
-        pop = tk.Label(window,text="Password has changed", font=("Arial", 12), width=20,height=10)
-        pop.pack()
-        window.mainloop()
+        popResultWindow("Password has changed")
 
     except Exception as e:
         print(e)
-else:
-    # setting log file's detail and location
-    if len(logLocation) == 0 :
-        logging.basicConfig(
-            filename = logFileName,
-            format = '%(asctime)s %(levelname)s %(message)s',
-            level = logging.INFO
-        )
-    else :
-        logging.basicConfig(
-            filename = logLocation + '/' + logFileName,
-            format = '%(asctime)s %(levelname)s %(message)s',
-            level = logging.INFO
-        )
-
-    logging.info('Not yet to change')
-
-    # pop result window
-    window = tk.Tk()
-    window.title("Result")
-    window.geometry('250x90')
-    pop = tk.Label(window,text="Not yet to change", font=("Arial", 12), width=20,height=10)
-    pop.pack()
-    window.mainloop()
 
 # negative day
-if brutalChangeYesNo :
+elif brutalChangeYesNo :
     try :
         # create a sshclient instance
         connection = paramiko.SSHClient()
 
         # create connection and specify it in sshclient
         connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        connection.load_system_host_keys()
         connection.connect(hostname=hostname, port=port, username=username, password=password)
         interact = connection.invoke_shell()
 
@@ -177,81 +123,31 @@ if brutalChangeYesNo :
         # close connection
         connection.close()
 
-        # setting log file's detail and location
-        if len(logLocation) == 0 :
-            logging.basicConfig(
-                filename = logFileName,
-                format = '%(asctime)s %(levelname)s %(message)s',
-                level = logging.INFO
-            )
-        else :
-            logging.basicConfig(
-                filename = logLocation + '/' + logFileName,
-                format = '%(asctime)s %(levelname)s %(message)s',
-                level = logging.INFO
-            )
-
-        logging.info('all authentication tokens updated successfully.')
+        # setting log file's detail, location, text
+        logInformation(logLocation, logFileName, 'all authentication tokens updated successfully')
 
         # synchronize changing config file's password information
-        config.set('TARGET', 'PASSWORD', newPassword)
-        with open('config.ini', 'w') as configfile:
-            config.write(configfile)
+        rewriteIni(config, newPassword)
         
         # write change result into csvfile
-        if os.path.exists(csvFileName):
-            with open(csvFileName, 'a', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow([date.today(), hostname, port, username, newPassword])
-        else:
-            with open(csvFileName, 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(['Date', 'Hostname', 'Port', 'Username', 'NewPassword'])
-                writer.writerow([date.today(), hostname, port, username, newPassword])
+        writeCsv(csvFileName, date.today(), hostname, port, username, newPassword)
         
         # pop result window
-        window = tk.Tk()
-        window.title("Result")
-        window.geometry('250x90')
-        pop = tk.Label(window,text="Password has changed", font=("Arial", 12), width=20,height=10)
-        pop.pack()
-        window.mainloop()
+        popResultWindow("Password has changed")
 
     except Exception as e:
         print(e)
-else:
-    # setting log file's detail and location
-    if len(logLocation) == 0 :
-        logging.basicConfig(
-            filename = logFileName,
-            format = '%(asctime)s %(levelname)s %(message)s',
-            level = logging.INFO
-        )
-    else :
-        logging.basicConfig(
-            filename = logLocation + '/' + logFileName,
-            format = '%(asctime)s %(levelname)s %(message)s',
-            level = logging.INFO
-        )
 
-    logging.info('Not yet to change')
+else:
+    # setting log file's detail, location, text
+    logInformation(logLocation, logFileName, 'Not yet to change')
 
     # pop result window
-    window = tk.Tk()
-    window.title("Result")
-    window.geometry('250x90')
-    pop = tk.Label(window,text="Not yet to change", font=("Arial", 12), width=20,height=10)
-    pop.pack()
-    window.mainloop()
+    popResultWindow('Not yet to change')
 
 
 
-# customize function
-def sendingEmail():
-    # sending email about the result of changing password
-    mail = outlook.CreateItem(0)
-    mail.Subject = 'Auto Changing Password Result'
-    mail.Body = f'Your New Password : {newPassword}'
-    mail.To = email
-    mail.Send()
-    print('Sending successful')
+        
+
+        
+
