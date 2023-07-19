@@ -11,6 +11,17 @@ from functions import popResultWindow, logInformation, writeCsv, rewriteIni, sen
 config = configparser.ConfigParser()
 config.read('config.ini', encoding = 'utf-8')
 
+# get config information(storing log name and location)
+logFileName = config['LOG']['FILENAME']
+logLocation = config['LOG']['LOCATION']
+
+# get config information(storing csv name)
+csvFileName = config['CSV']['FILENAME']
+
+# get config information(sending email)
+email = config['SEND']['EMAIL']
+emailSendYesNo = config['SEND']['EMAILSENDYESNO']
+
 # get config information(target server)
 username = config['TARGET']['USERNAME']
 password = config['TARGET']['PASSWORD']
@@ -23,29 +34,24 @@ newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
 while newPassword == password :
     newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
 
+
 # if password's character lower than 8, will show error and quit this procedure 
 if len(newPassword) < 8 :
     popResultWindow('This password is shorter than\n 8 characters, please change it')
+
+    # setting log file's detail, location, text
+    logInformation(logLocation, logFileName, 'bad password, the password is shorter than 8 characters')
+
+    # stop the whole procedure
     quit()
-
-# get config information(storing log name and location)
-logFileName = config['LOG']['FILENAME']
-logLocation = config['LOG']['LOCATION']
-
-# get config information(storing csv name)
-csvFileName = config['CSV']['FILENAME']
-
-# get config information(sending email)
-email = config['SEND']['EMAIL']
-emailSendYesNo = config['SEND']['EMAILSENDYESNO']
 
 # gahter outlook user inforamtion
 outlook = win32.Dispatch('outlook.application')
 mapi = outlook.GetNamespace("MAPI")
 
 # select emails in 24 hours and judge whether there is expire password or not
-changeYesNo = False
-brutalChangeYesNo = False
+changeTrueFalse = False
+brutalChangeTrueFalse = False
 for num in range(len(mapi.Folders)) :
     received_dt = datetime.now() - timedelta(days = 30)
     received_dt = received_dt.strftime('%m/%d/%Y %H:%M')
@@ -53,14 +59,14 @@ for num in range(len(mapi.Folders)) :
     messages = messages.Restrict("[ReceivedTime] >='" + received_dt + "'")
     for msg in list(messages):
         if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) <= 0:
-            changeYesNo = True
+            changeTrueFalse = True
         '''
         if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) < 0:
-            brutalChangeYesNo = True
+            brutalChangeTrueFalse = True
         '''
 
 # 0 days
-if changeYesNo :
+if changeTrueFalse :
     try :
         # create a transport instance
         connection = paramiko.SSHClient()
@@ -100,7 +106,7 @@ if changeYesNo :
         print(e)
 
 # less than 0 days
-elif brutalChangeYesNo :
+elif brutalChangeTrueFalse :
     try :
         # create a sshclient instance
         connection = paramiko.SSHClient()
@@ -161,7 +167,7 @@ else:
 
     # sending email about the result
     if emailSendYesNo == 'yes':
-        sendingEmail('Not yet to change', email, outlook)
+        sendingEmail('not yet to change', email, outlook)
 
 
 
