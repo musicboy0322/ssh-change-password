@@ -23,6 +23,11 @@ newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
 while newPassword == password :
     newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
 
+# if password's character lower than 8, will show error and quit this procedure 
+if len(newPassword) < 8 :
+    popResultWindow('This password is shorter than\n 8 characters, please change it')
+    quit()
+
 # get config information(storing log name and location)
 logFileName = config['LOG']['FILENAME']
 logLocation = config['LOG']['LOCATION']

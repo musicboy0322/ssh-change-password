@@ -8,8 +8,8 @@ def popResultWindow(text):
     # as the function name, pop result window
     window = tk.Tk()
     window.title("Result")
-    window.geometry('250x90')
-    pop = tk.Label(window,text=text, font=("Arial", 12), width=20,height=10)
+    window.geometry('280x90')
+    pop = tk.Label(window,text=text, font=("Arial", 12), width=30,height=10)
     pop.pack()
     window.mainloop()
 
