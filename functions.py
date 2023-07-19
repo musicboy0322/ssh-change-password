@@ -48,8 +48,7 @@ def rewriteIni(config, newPassword):
     with open('config.ini', 'w') as configfile:
         config.write(configfile)
 
-# customize function
-def sendingEmail(text, email):
+def sendingEmail(text, email, outlook):
     # sending email about the result of changing password
     mail = outlook.CreateItem(0)
     mail.Subject = 'Auto Changing Password Result'

@@ -5,7 +5,7 @@ import win32com.client as win32
 from datetime import datetime, timedelta
 import random
 from datetime import date
-from functions import popResultWindow, logInformation, writeCsv, rewriteIni
+from functions import popResultWindow, logInformation, writeCsv, rewriteIni, sendingEmail
 
 # import config file
 config = configparser.ConfigParser()
@@ -32,6 +32,7 @@ csvFileName = config['CSV']['FILENAME']
 
 # get config information(sending email)
 email = config['SEND']['EMAIL']
+emailSendYesNo = config['SEND']['EMAILSENDYESNO']
 
 # gahter outlook user inforamtion
 outlook = win32.Dispatch('outlook.application')
@@ -86,10 +87,14 @@ if changeYesNo :
         # pop result window
         popResultWindow("Password has changed")
 
+        # sending email about the result
+        if emailSendYesNo == 'yes':
+            sendingEmail(f'Your new password is {newPassword}', email, outlook)
+
     except Exception as e:
         print(e)
 
-# negative day
+# less than 0 days
 elif brutalChangeYesNo :
     try :
         # create a sshclient instance
@@ -135,6 +140,10 @@ elif brutalChangeYesNo :
         # pop result window
         popResultWindow("Password has changed")
 
+        # sending email about the result
+        if emailSendYesNo == 'yes':
+            sendingEmail(f'Your new password is {newPassword}', email, outlook)
+
     except Exception as e:
         print(e)
 
@@ -144,6 +153,10 @@ else:
 
     # pop result window
     popResultWindow('Not yet to change')
+
+    # sending email about the result
+    if emailSendYesNo == 'yes':
+        sendingEmail('Not yet to change', email, outlook)
 
 
 
