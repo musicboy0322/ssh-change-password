@@ -53,17 +53,17 @@ mapi = outlook.GetNamespace("MAPI")
 changeTrueFalse = False
 brutalChangeTrueFalse = False
 for num in range(len(mapi.Folders)) :
-    received_dt = datetime.now() - timedelta(days = 30)
+    received_dt = datetime.now() - timedelta(days = 1)
     received_dt = received_dt.strftime('%m/%d/%Y %H:%M')
     messages = mapi.Folders(num + 1).Folders('收件匣').Items
     messages = messages.Restrict("[ReceivedTime] >='" + received_dt + "'")
     for msg in list(messages):
-        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) <= 0:
+        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) == 0:
             changeTrueFalse = True
-        '''
+        
         if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) < 0:
             brutalChangeTrueFalse = True
-        '''
+
 
 # 0 days
 if changeTrueFalse :
