@@ -68,7 +68,7 @@ for num in range(len(mapi.Folders)) :
 # 0 days
 if changeTrueFalse :
     try :
-        # create a transport instance
+        # create sshclient instance
         connection = paramiko.SSHClient()
 
         # create connection and specify it in sshclient
