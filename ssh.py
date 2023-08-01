@@ -6,11 +6,16 @@ from datetime import datetime, timedelta
 import random
 from datetime import date
 import logging
+from progress.bar import ShadyBar
 from functions import popResultWindow, writeCsv, rewriteIni, sendingEmail, traverseFolders
 
 # import config file
 config = configparser.ConfigParser()
 config.read('config.ini', encoding = 'utf-8')
+
+# generate progress bar
+with ShadyBar('Reading config', max=100, suffix='%(percent)d%%') as bar:
+    bar.next(100)
 
 # get config information(storing log name and location)
 logFileName = config['LOG']['FILENAME']
@@ -68,6 +73,10 @@ for i in range(len(mapi.Folders)) :
     root_folder = mapi.Folders[i].Folders[1]
     category = traverseFolders(root_folder, datetime, timedelta)
 
+    # generate progress bar(progress bar is accroding to how many top folders you have and will calculate every time it will increase)
+    with ShadyBar('Searching target email', max=100, suffix='%(percent)d%%') as bar:
+        bar.next((100 / len(mapi.Folders)) * (i + 1))
+
 # 0 days
 if category == 'change' :
     try :
@@ -77,9 +86,17 @@ if category == 'change' :
         # create sshclient instance
         connection = paramiko.SSHClient()
 
+        # generate progress bar
+        with ShadyBar('Connecting server', max=100, suffix='%(percent)d%%') as bar:
+            bar.next(50)
+
         # create connection and specify it in sshclient
         connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         connection.connect(hostname=hostname, port=port, username=username, password=password)
+
+        # generate progress bar
+        bar.next(100)
+        bar.finish()
 
         # writing log text
         logging.info('Successfully connect to remote server')
@@ -91,6 +108,10 @@ if category == 'change' :
         stdin.flush()
         stdout.channel.set_combine_stderr(True)
 
+        # generate progress bar
+        with ShadyBar('Changing password', max=100, suffix='%(percent)d%%') as bar:
+            bar.next(100)
+
         # writing log text
         logging.info(stdout.read().decode())
 
@@ -99,9 +120,13 @@ if category == 'change' :
 
         # synchronize changing config file's password information
         rewriteIni(config, newPassword)
-        
+
         # write change result into csvfile
         writeCsv(csvFileName, date.today(), hostname, port, username, newPassword)
+
+        # generate progress bar
+        with ShadyBar('Writing csv', max=100, suffix='%(percent)d%%') as bar:
+            bar.next(100)
 
         # pop result window
         popResultWindow("Password has changed")
@@ -122,10 +147,18 @@ elif category == 'brutal' :
         # create a sshclient instance
         connection = paramiko.SSHClient()
 
+        # generate progress bar
+        with ShadyBar('Connecting server', max=100, suffix='%(percent)d%%') as bar:
+            bar.next(50)
+
         # create connection and specify it in sshclient
         connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         connection.connect(hostname=hostname, port=port, username=username, password=password)
         interact = connection.invoke_shell()
+
+        # generate progress bar
+        bar.next(100)
+        bar.finish()
 
         # writing log text
         logging.info('Successfully connect to remote server')
@@ -150,6 +183,10 @@ elif category == 'brutal' :
         interact.send(newPassword + '\n')
         resp = interact.recv(9999)
 
+        # generate progress bar
+        with ShadyBar('Changing password', max=100, suffix='%(percent)d%%') as bar:
+            bar.next(100)
+
         # writing log text
         logging.info('All authentication tokens updated successfully')
 
@@ -161,6 +198,10 @@ elif category == 'brutal' :
         
         # write change result into csvfile
         writeCsv(csvFileName, date.today(), hostname, port, username, newPassword)
+
+        # generate progress bar
+        with ShadyBar('Writing csv', max=100, suffix='%(percent)d%%') as bar:
+            bar.next(100)
         
         # pop result window
         popResultWindow("Password has changed")
