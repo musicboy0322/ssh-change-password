@@ -5,7 +5,8 @@ import win32com.client as win32
 from datetime import datetime, timedelta
 import random
 from datetime import date
-from functions import popResultWindow, logInformation, writeCsv, rewriteIni, sendingEmail, traverseFolders
+import logging
+from functions import popResultWindow, writeCsv, rewriteIni, sendingEmail, traverseFolders
 
 # import config file
 config = configparser.ConfigParser()
@@ -34,13 +35,26 @@ newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
 while newPassword == password :
     newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
 
+# setting log file's detail and location
+if len(logLocation) == 0 :
+    logging.basicConfig(
+        filename = logFileName,
+        format = '%(asctime)s %(levelname)s %(message)s',
+        level = logging.INFO
+    )
+else :
+    logging.basicConfig(
+        filename = logLocation + '/' + logFileName,
+        format = '%(asctime)s %(levelname)s %(message)s',
+        level = logging.INFO
+    )
 
 # if password's character lower than 8, will show error and quit this procedure 
 if len(newPassword) < 8 :
     popResultWindow('This password is shorter than\n 8 characters, please change it')
 
-    # setting log file's detail, location, text
-    logInformation(logLocation, logFileName, 'bad password, the password is shorter than 8 characters')
+    # writing log text
+    logging.warning('Bad password, the password is shorter than 8 characters')
 
     # stop the whole procedure
     quit()
@@ -57,6 +71,9 @@ for i in range(len(mapi.Folders)) :
 # 0 days
 if category == 'change' :
     try :
+        # writing log text
+        logging.info('password will expire in 0 day, password need to change')
+
         # create sshclient instance
         connection = paramiko.SSHClient()
 
@@ -64,19 +81,21 @@ if category == 'change' :
         connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         connection.connect(hostname=hostname, port=port, username=username, password=password)
 
+        # writing log text
+        logging.info('Successfully connect to remote server')
+
         # excute command
         stdin, stdout, stderr = connection.exec_command('passwd')
         stdin.write(newPassword + '\n')
         stdin.write(newPassword + '\n')
         stdin.flush()
         stdout.channel.set_combine_stderr(True)
-        print(stdout.read().decode())
+
+        # writing log text
+        logging.info(stdout.read().decode())
 
         # close connection
         connection.close()
-
-        # setting log file's detail, location, text
-        logInformation(logLocation, logFileName, 'all authentication tokens updated successfully')
 
         # synchronize changing config file's password information
         rewriteIni(config, newPassword)
@@ -92,11 +111,14 @@ if category == 'change' :
             sendingEmail(f'Your new password is {newPassword}', email, outlook)
 
     except Exception as e:
-        print(e)
+        logging.error(e)
 
 # less than 0 days
 elif category == 'brutal' :
     try :
+        # writing log text
+        logging.info('Password will expire in less than 0 days, password need to change')
+
         # create a sshclient instance
         connection = paramiko.SSHClient()
 
@@ -104,6 +126,9 @@ elif category == 'brutal' :
         connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         connection.connect(hostname=hostname, port=port, username=username, password=password)
         interact = connection.invoke_shell()
+
+        # writing log text
+        logging.info('Successfully connect to remote server')
 
         # read information and send text
         buff = ''
@@ -125,11 +150,11 @@ elif category == 'brutal' :
         interact.send(newPassword + '\n')
         resp = interact.recv(9999)
 
+        # writing log text
+        logging.info('All authentication tokens updated successfully')
+
         # close connection
         connection.close()
-
-        # setting log file's detail, location, text
-        logInformation(logLocation, logFileName, 'all authentication tokens updated successfully')
 
         # synchronize changing config file's password information
         rewriteIni(config, newPassword)
@@ -145,15 +170,15 @@ elif category == 'brutal' :
             sendingEmail(f'Your new password is {newPassword}', email, outlook)
 
     except Exception as e:
-        print(e)
+        logging.error(e)
 
 else:
-    # setting log file's detail, location, text
-    logInformation(logLocation, logFileName, 'Not yet to change')
+    # writing log text
+    logging.info('Password not yet to change')
 
     # pop result window
-    popResultWindow('Not yet to change')
+    popResultWindow('Password not yet to change')
 
     # sending email about the result
     if emailSendYesNo == 'yes':
-        sendingEmail('not yet to change', email, outlook)
+        sendingEmail('Password not yet to change', email, outlook)

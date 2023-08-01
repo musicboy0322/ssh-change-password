@@ -1,5 +1,4 @@
 import tkinter as tk
-import logging
 import csv
 import os 
 
@@ -12,23 +11,6 @@ def popResultWindow(text):
     pop = tk.Label(window,text=text, font=("Arial", 12), width=30,height=10)
     pop.pack()
     window.mainloop()
-
-def logInformation(logLocation, logFileName, text):
-    # setting log file's detail and location
-    if len(logLocation) == 0 :
-        logging.basicConfig(
-            filename = logFileName,
-            format = '%(asctime)s %(levelname)s %(message)s',
-            level = logging.INFO
-        )
-    else :
-        logging.basicConfig(
-            filename = logLocation + '/' + logFileName,
-            format = '%(asctime)s %(levelname)s %(message)s',
-            level = logging.INFO
-        )
-
-    logging.info(text)
 
 def writeCsv(csvFileName, date, hostname, port, username, newPassword) :
     # write change result into csvfile
