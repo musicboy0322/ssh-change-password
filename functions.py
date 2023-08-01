@@ -56,3 +56,26 @@ def sendingEmail(text, email, outlook):
     mail.To = email
     mail.Send()
     print('Sending successful')
+
+def traverseFolders(folder, datetime, timedelta):
+    messages = folder.Items
+    received_dt = datetime.now() - timedelta(days = 1)
+    received_dt = received_dt.strftime('%m/%d/%Y %H:%M %p')
+    messages = messages.Restrict("[ReceivedTime] >= '" + received_dt +"'")
+    message_count = messages.Count
+    for i in range(1, message_count + 1):
+        msg = messages.Item(i)
+        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) == 0:
+            return 'change'
+
+        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) < 0:
+            return 'brutal'
+
+    subfolders = folder.Folders
+    for subfolder in subfolders:
+        result = traverseFolders(subfolder, datetime, timedelta)
+        if result == 'brutal':
+            return 'brutal'
+
+        elif result == 'change':
+            return 'change'

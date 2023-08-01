@@ -5,7 +5,7 @@ import win32com.client as win32
 from datetime import datetime, timedelta
 import random
 from datetime import date
-from functions import popResultWindow, logInformation, writeCsv, rewriteIni, sendingEmail
+from functions import popResultWindow, logInformation, writeCsv, rewriteIni, sendingEmail, traverseFolders
 
 # import config file
 config = configparser.ConfigParser()
@@ -50,23 +50,12 @@ outlook = win32.Dispatch('outlook.application')
 mapi = outlook.GetNamespace("MAPI")
 
 # select emails in 24 hours and judge whether there is expire password or not
-changeTrueFalse = False
-brutalChangeTrueFalse = False
-for num in range(len(mapi.Folders)) :
-    received_dt = datetime.now() - timedelta(days = 1)
-    received_dt = received_dt.strftime('%m/%d/%Y %H:%M')
-    messages = mapi.Folders(num + 1).Folders('收件匣').Items
-    messages = messages.Restrict("[ReceivedTime] >='" + received_dt + "'")
-    for msg in list(messages):
-        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) == 0:
-            changeTrueFalse = True
-        
-        if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) < 0:
-            brutalChangeTrueFalse = True
-
+for i in range(len(mapi.Folders)) :
+    root_folder = mapi.Folders[i].Folders[1]
+    category = traverseFolders(root_folder, datetime, timedelta)
 
 # 0 days
-if changeTrueFalse :
+if category == 'change' :
     try :
         # create sshclient instance
         connection = paramiko.SSHClient()
@@ -106,7 +95,7 @@ if changeTrueFalse :
         print(e)
 
 # less than 0 days
-elif brutalChangeTrueFalse :
+elif category == 'brutal' :
     try :
         # create a sshclient instance
         connection = paramiko.SSHClient()
@@ -168,10 +157,3 @@ else:
     # sending email about the result
     if emailSendYesNo == 'yes':
         sendingEmail('not yet to change', email, outlook)
-
-
-
-        
-
-        
-
