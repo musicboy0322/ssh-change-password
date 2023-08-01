@@ -6,16 +6,17 @@ from datetime import datetime, timedelta
 import random
 from datetime import date
 import logging
-from progress.bar import ShadyBar
-from functions import popResultWindow, writeCsv, rewriteIni, sendingEmail, traverseFolders
+from functions import popResultWindow, writeCsv, rewriteIni, sendingEmail, traverseFolders, displayProgressBar
+
+# generate progress bar
+displayProgressBar('Reading config', 0)
 
 # import config file
 config = configparser.ConfigParser()
 config.read('config.ini', encoding = 'utf-8')
 
 # generate progress bar
-with ShadyBar('Reading config', max=100, suffix='%(percent)d%%') as bar:
-    bar.next(100)
+displayProgressBar('Reading config', 100)
 
 # get config information(storing log name and location)
 logFileName = config['LOG']['FILENAME']
@@ -68,14 +69,16 @@ if len(newPassword) < 8 :
 outlook = win32.Dispatch('outlook.application')
 mapi = outlook.GetNamespace("MAPI")
 
+# generate progress bar
+displayProgressBar('Searching target email', 0)
+
 # select emails in 24 hours and judge whether there is expire password or not
 for i in range(len(mapi.Folders)) :
     root_folder = mapi.Folders[i].Folders[1]
     category = traverseFolders(root_folder, datetime, timedelta)
 
     # generate progress bar(progress bar is accroding to how many top folders you have and will calculate every time it will increase)
-    with ShadyBar('Searching target email', max=100, suffix='%(percent)d%%') as bar:
-        bar.next((100 / len(mapi.Folders)) * (i + 1))
+    displayProgressBar('Searching target email', (100 / len(mapi.Folders)) * (i + 1))
 
 # 0 days
 if category == 'change' :
@@ -83,23 +86,27 @@ if category == 'change' :
         # writing log text
         logging.info('password will expire in 0 day, password need to change')
 
+        # generate progress bar
+        displayProgressBar('Connecting server', 0)
+
         # create sshclient instance
         connection = paramiko.SSHClient()
 
         # generate progress bar
-        with ShadyBar('Connecting server', max=100, suffix='%(percent)d%%') as bar:
-            bar.next(50)
+        displayProgressBar('Connecting server', 50)
 
         # create connection and specify it in sshclient
         connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         connection.connect(hostname=hostname, port=port, username=username, password=password)
 
         # generate progress bar
-        bar.next(100)
-        bar.finish()
+        displayProgressBar('Connecting server', 100)
 
         # writing log text
         logging.info('Successfully connect to remote server')
+
+        # generate progress bar
+        displayProgressBar('Changing password', 0)
 
         # excute command
         stdin, stdout, stderr = connection.exec_command('passwd')
@@ -109,8 +116,7 @@ if category == 'change' :
         stdout.channel.set_combine_stderr(True)
 
         # generate progress bar
-        with ShadyBar('Changing password', max=100, suffix='%(percent)d%%') as bar:
-            bar.next(100)
+        displayProgressBar('Changing password', 100)
 
         # writing log text
         logging.info(stdout.read().decode())
@@ -121,12 +127,14 @@ if category == 'change' :
         # synchronize changing config file's password information
         rewriteIni(config, newPassword)
 
+        # generate progress bar
+        displayProgressBar('Writing csv', 0)
+
         # write change result into csvfile
         writeCsv(csvFileName, date.today(), hostname, port, username, newPassword)
 
         # generate progress bar
-        with ShadyBar('Writing csv', max=100, suffix='%(percent)d%%') as bar:
-            bar.next(100)
+        displayProgressBar('Writing csv', 100)
 
         # pop result window
         popResultWindow("Password has changed")
@@ -144,12 +152,14 @@ elif category == 'brutal' :
         # writing log text
         logging.info('Password will expire in less than 0 days, password need to change')
 
+        # generate progress bar
+        displayProgressBar('Connecting server', 0)
+        
         # create a sshclient instance
         connection = paramiko.SSHClient()
 
         # generate progress bar
-        with ShadyBar('Connecting server', max=100, suffix='%(percent)d%%') as bar:
-            bar.next(50)
+        displayProgressBar('Connecting server', 50)
 
         # create connection and specify it in sshclient
         connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -157,11 +167,13 @@ elif category == 'brutal' :
         interact = connection.invoke_shell()
 
         # generate progress bar
-        bar.next(100)
-        bar.finish()
+        displayProgressBar('Connecting server', 100)
 
         # writing log text
         logging.info('Successfully connect to remote server')
+
+        # generate progress bar
+        displayProgressBar('Changing password', 0)
 
         # read information and send text
         buff = ''
@@ -181,11 +193,9 @@ elif category == 'brutal' :
             resp = interact.recv(9999)
             buff += str(resp)
         interact.send(newPassword + '\n')
-        resp = interact.recv(9999)
 
         # generate progress bar
-        with ShadyBar('Changing password', max=100, suffix='%(percent)d%%') as bar:
-            bar.next(100)
+        displayProgressBar('Changing password', 100)
 
         # writing log text
         logging.info('All authentication tokens updated successfully')
@@ -196,12 +206,14 @@ elif category == 'brutal' :
         # synchronize changing config file's password information
         rewriteIni(config, newPassword)
         
+        # generate progress bar
+        displayProgressBar('Writing csv', 0)
+
         # write change result into csvfile
         writeCsv(csvFileName, date.today(), hostname, port, username, newPassword)
 
         # generate progress bar
-        with ShadyBar('Writing csv', max=100, suffix='%(percent)d%%') as bar:
-            bar.next(100)
+        displayProgressBar('Writing csv', 100)
         
         # pop result window
         popResultWindow("Password has changed")

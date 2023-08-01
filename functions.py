@@ -1,6 +1,7 @@
 import tkinter as tk
 import csv
-import os 
+import os
+from progress.bar import ShadyBar 
 
 # used function
 def popResultWindow(text):
@@ -61,3 +62,9 @@ def traverseFolders(folder, datetime, timedelta):
 
         elif result == 'change':
             return 'change'
+
+def displayProgressBar(barName, degree):
+    # generate progress bar
+    with ShadyBar(barName, max=100, suffix='%(percent)d%%') as bar:
+        bar.next(degree)
+        bar.finish()
