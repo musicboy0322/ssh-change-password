@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import random
 from datetime import date
 import logging
-from functions import popResultWindow, writeCsv, rewriteIni, sendingEmail, traverseFolders, displayProgressBar
+from functions import writeCsv, rewriteIni, sendingEmail, traverseFolders, displayProgressBar
 
 # generate progress bar
 displayProgressBar('Reading config', 0)
@@ -57,10 +57,15 @@ else :
 
 # if password's character lower than 8, will show error and quit this procedure 
 if len(newPassword) < 8 :
-    popResultWindow('This password is shorter than\n 8 characters, please change it')
+
+    # print result
+    print('This password is shorter than\n 8 characters, please change it\n')
 
     # writing log text
     logging.warning('Bad password, the password is shorter than 8 characters')
+
+    # as the sentence say
+    input('Press Enter to exit...')
 
     # stop the whole procedure
     quit()
@@ -136,12 +141,16 @@ if category == 'change' :
         # generate progress bar
         displayProgressBar('Writing csv', 100)
 
-        # pop result window
-        popResultWindow("Password has changed")
+        # print result
+        print("Password has changed\n")
 
         # sending email about the result
         if emailSendYesNo == 'yes':
             sendingEmail(f'Your new password is {newPassword}', email, outlook)
+        
+        # as the sentence say
+        input('Press Enter to exit...')
+        
 
     except Exception as e:
         logging.error(e)
@@ -177,22 +186,24 @@ elif category == 'brutal' :
 
         # read information and send text
         buff = ''
-        while not buff.endswith("UNIX password: '"):
+        while not buff.endswith("password: '"):
             resp = interact.recv(9999)
             buff += str(resp)
         interact.send(password + '\n')
         
         buff = ''
-        while not buff.endswith("New password: '"):
+        while not buff.endswith("password: '"):
             resp = interact.recv(9999)
             buff += str(resp)
         interact.send(newPassword + '\n')        
 
         buff = ''
-        while not buff.endswith("Retype new password: '"):
+        while not buff.endswith("password: '"):
             resp = interact.recv(9999)
             buff += str(resp)
         interact.send(newPassword + '\n')
+        resp = interact.recv(9999)
+        resp = interact.recv(9999)
 
         # generate progress bar
         displayProgressBar('Changing password', 100)
@@ -215,12 +226,15 @@ elif category == 'brutal' :
         # generate progress bar
         displayProgressBar('Writing csv', 100)
         
-        # pop result window
-        popResultWindow("Password has changed")
+        # print result
+        print("Password has changed\n")
 
         # sending email about the result
         if emailSendYesNo == 'yes':
             sendingEmail(f'Your new password is {newPassword}', email, outlook)
+
+        # as the sentence say
+        input('Press Enter to exit...')
 
     except Exception as e:
         logging.error(e)
@@ -229,9 +243,12 @@ else:
     # writing log text
     logging.info('Password not yet to change')
 
-    # pop result window
-    popResultWindow('Password not yet to change')
+    # print result
+    print('Password not yet to change\n')
 
     # sending email about the result
     if emailSendYesNo == 'yes':
         sendingEmail('Password not yet to change', email, outlook)
+
+    # as the sentence say
+        input('Press Enter to exit...')
