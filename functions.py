@@ -2,6 +2,9 @@ import tkinter as tk
 import csv
 import os
 from progress.bar import ShadyBar 
+import secrets
+import string
+import random
 
 # used function
 def popResultWindow(text):
@@ -42,7 +45,7 @@ def sendingEmail(text, email, outlook):
 
 def traverseFolders(folder, datetime, timedelta):
     messages = folder.Items
-    received_dt = datetime.now() - timedelta(days = 1)
+    received_dt = datetime.now() - timedelta(days = 60)
     received_dt = received_dt.strftime('%m/%d/%Y %H:%M %p')
     messages = messages.Restrict("[ReceivedTime] >= '" + received_dt +"'")
     message_count = messages.Count
@@ -68,3 +71,22 @@ def displayProgressBar(barName, degree):
     with ShadyBar(barName, max=100, suffix='%(percent)d%%') as bar:
         bar.next(degree)
         bar.finish()
+
+def generateRandomPassword():
+    # generate random password
+    characters = string.ascii_letters + string.digits
+
+    password = [secrets.choice(string.ascii_uppercase),
+                secrets.choice(string.ascii_lowercase),
+                secrets.choice(string.digits),
+                secrets.choice(string.punctuation),
+                secrets.choice(string.punctuation)]
+
+    for i in range(5):
+        password.extend(secrets.choice(characters))
+    
+    random.shuffle(password)
+
+    result = ''.join(password)
+
+    return result

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import random
 from datetime import date
 import logging
-from functions import writeCsv, rewriteIni, sendingEmail, traverseFolders, displayProgressBar
+from functions import writeCsv, rewriteIni, sendingEmail, traverseFolders, displayProgressBar, generateRandomPassword
 
 # generate progress bar
 displayProgressBar('Reading config', 0)
@@ -18,28 +18,25 @@ config.read('config.ini', encoding = 'utf-8')
 # generate progress bar
 displayProgressBar('Reading config', 100)
 
-# get config information(storing log name and location)
-logFileName = config['LOG']['FILENAME']
-logLocation = config['LOG']['LOCATION']
-
-# get config information(storing csv name)
-csvFileName = config['CSV']['FILENAME']
-
-# get config information(sending email)
-email = config['SEND']['EMAIL']
-emailSendYesNo = config['SEND']['EMAILSENDYESNO']
-
 # get config information(target server)
 username = config['TARGET']['USERNAME']
 password = config['TARGET']['PASSWORD']
 hostname = config['TARGET']['HOSTNAME']
 port = int(config['TARGET']['PORT'])
 
-# get config information(new password) and choose random password without repeating the same password
-newPasswordSplit = config['NEW']['PASSWORD'].split(',')
-newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
-while newPassword == password :
-    newPassword = newPasswordSplit[random.randint(0,len(newPasswordSplit)-1)]
+# get config information(storing log name and location)
+logFileName = config['LOG']['FILENAME']
+logLocation = config['LOG']['LOCATION']
+
+# get config information(sending email)
+email = config['SEND']['EMAIL']
+emailSendYesNo = config['SEND']['EMAILSENDYESNO']
+
+# get config information(storing csv name)
+csvFileName = config['CSV']['FILENAME']
+
+# as it say, generate random password
+newPassword = generateRandomPassword()
 
 # setting log file's detail and location
 if len(logLocation) == 0 :
@@ -54,21 +51,6 @@ else :
         format = '%(asctime)s %(levelname)s %(message)s',
         level = logging.INFO
     )
-
-# if password's character lower than 8, will show error and quit this procedure 
-if len(newPassword) < 8 :
-
-    # print result
-    print('This password is shorter than\n 8 characters, please change it\n')
-
-    # writing log text
-    logging.warning('Bad password, the password is shorter than 8 characters')
-
-    # as the sentence say
-    input('Press Enter to exit...')
-
-    # stop the whole procedure
-    quit()
 
 # gahter outlook user inforamtion
 outlook = win32.Dispatch('outlook.application')
