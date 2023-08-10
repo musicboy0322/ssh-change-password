@@ -29,9 +29,10 @@ def writeCsv(csvFileName, date, hostname, port, username, newPassword) :
             writer.writerow(['Date', 'Hostname', 'Port', 'Username', 'NewPassword'])
             writer.writerow([date, hostname, port, username, newPassword])
 
-def rewriteJson(config, newPassword):
+def rewriteJson(config, newPassword, number):
     # synchronize changing config file's password information
-    config['TARGET'][0]['password'] = newPassword
+    print(number)
+    config['TARGET'][number]['password'] = newPassword
 
     with open('config.json', 'w') as configFile:
         json.dump(config, configFile, indent=1)
@@ -46,28 +47,31 @@ def sendingEmail(text, email, outlook):
     mail.Send()
     print('Sending successful')
 
-def traverseFolders(folder, datetime, timedelta):
+def traverseFolders(folder, datetime, timedelta, targetMail):
     messages = folder.Items
-    received_dt = datetime.now() - timedelta(days = 60)
+    received_dt = datetime.now() - timedelta(days = 1)
     received_dt = received_dt.strftime('%m/%d/%Y %H:%M %p')
     messages = messages.Restrict("[ReceivedTime] >= '" + received_dt +"'")
     message_count = messages.Count
     for i in range(1, message_count + 1):
         msg = messages.Item(i)
         if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) == 0:
-            return 'change'
+            # put text in [0] and put category in [1]
+            temp = []
+            temp.append(str(msg).split(' ')[1])
+            temp.append('change')
+            targetMail.append(temp)
 
         if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) < 0:
-            return 'brutal'
+            # put text in [0] and put category in [1]
+            temp = []
+            temp.append(str(msg).split(' ')[1])
+            temp.append('brutal')
+            targetMail.append(temp)
 
     subfolders = folder.Folders
     for subfolder in subfolders:
-        result = traverseFolders(subfolder, datetime, timedelta)
-        if result == 'brutal':
-            return 'brutal'
-
-        elif result == 'change':
-            return 'change'
+        result = traverseFolders(subfolder, datetime, timedelta, targetMail)
 
 def displayProgressBar(barName, degree):
     # generate progress bar
@@ -82,8 +86,8 @@ def generateRandomPassword():
     password = [secrets.choice(string.ascii_uppercase),
                 secrets.choice(string.ascii_lowercase),
                 secrets.choice(string.digits),
-                secrets.choice(string.punctuation),
-                secrets.choice(string.punctuation)]
+                secrets.choice(string.punctuation.replace('\\','')),
+                secrets.choice(string.punctuation.replace('\\',''))]
 
     for i in range(5):
         password.extend(secrets.choice(characters))
