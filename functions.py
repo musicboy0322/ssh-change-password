@@ -5,6 +5,7 @@ from progress.bar import ShadyBar
 import secrets
 import string
 import random
+import json 
 
 # used function
 def popResultWindow(text):
@@ -28,11 +29,13 @@ def writeCsv(csvFileName, date, hostname, port, username, newPassword) :
             writer.writerow(['Date', 'Hostname', 'Port', 'Username', 'NewPassword'])
             writer.writerow([date, hostname, port, username, newPassword])
 
-def rewriteIni(config, newPassword):
+def rewriteJson(config, newPassword):
     # synchronize changing config file's password information
-    config.set('TARGET', 'PASSWORD', newPassword)
-    with open('config.ini', 'w') as configfile:
-        config.write(configfile)
+    config['TARGET'][0]['password'] = newPassword
+
+    with open('config.json', 'w') as configFile:
+        json.dump(config, configFile, indent=1)
+        
 
 def sendingEmail(text, email, outlook):
     # sending email about the result of changing password

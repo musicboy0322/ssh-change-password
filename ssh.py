@@ -1,75 +1,77 @@
 # import things
-import configparser
+import json 
 import paramiko
 import win32com.client as win32
 from datetime import datetime, timedelta
 import random
 from datetime import date
 import logging
-from functions import writeCsv, rewriteIni, sendingEmail, traverseFolders, displayProgressBar, generateRandomPassword
+from functions import writeCsv, rewriteJson, sendingEmail, traverseFolders, displayProgressBar, generateRandomPassword
 
-# generate progress bar
-displayProgressBar('Reading config', 0)
+try:
+    # generate progress bar
+    displayProgressBar('Reading config', 0)
 
-# import config file
-config = configparser.ConfigParser()
-config.read('config.ini', encoding = 'utf-8')
+    # import config file
+    with open('config.json', 'r') as configFile:
+        config = json.load(configFile)
 
-# generate progress bar
-displayProgressBar('Reading config', 100)
+    # generate progress bar
+    displayProgressBar('Reading config', 100)
 
-# get config information(target server)
-username = config['TARGET']['USERNAME']
-password = config['TARGET']['PASSWORD']
-hostname = config['TARGET']['HOSTNAME']
-port = int(config['TARGET']['PORT'])
+    # get config information(target server)
+    username = config['TARGET'][0]['username']
+    password = config['TARGET'][0]['password']
+    hostname = config['TARGET'][0]['hostname']
+    port = config['TARGET'][0]['port']
 
-# get config information(storing log name and location)
-logFileName = config['LOG']['FILENAME']
-logLocation = config['LOG']['LOCATION']
+    # get config information(storing log name and location)
+    logFileName = config['LOG']['filename']
+    logLocation = config['LOG']['location']
 
-# get config information(sending email)
-email = config['SEND']['EMAIL']
-emailSendYesNo = config['SEND']['EMAILSENDYESNO']
+    # get config information(sending email)
+    email = config['SEND']['email']
+    emailSendYesNo = config['SEND']['emailSendYesNo']
 
-# get config information(storing csv name)
-csvFileName = config['CSV']['FILENAME']
+    # get config information(storing csv name)
+    csvFileName = config['CSV']['filename']
 
-# as it say, generate random password
-newPassword = generateRandomPassword()
+    # as it say, generate random password
+    newPassword = generateRandomPassword()
 
-# setting log file's detail and location
-if len(logLocation) == 0 :
-    logging.basicConfig(
-        filename = logFileName,
-        format = '%(asctime)s %(levelname)s %(message)s',
-        level = logging.INFO
-    )
-else :
-    logging.basicConfig(
-        filename = logLocation + '/' + logFileName,
-        format = '%(asctime)s %(levelname)s %(message)s',
-        level = logging.INFO
-    )
+    #newPassword = 'twm09350935'
 
-# gahter outlook user inforamtion
-outlook = win32.Dispatch('outlook.application')
-mapi = outlook.GetNamespace("MAPI")
+    # setting log file's detail and location
+    if len(logLocation) == 0 :
+        logging.basicConfig(
+            filename = logFileName,
+            format = '%(asctime)s %(levelname)s %(message)s',
+            level = logging.INFO
+        )
+    else :
+        logging.basicConfig(
+            filename = logLocation + '/' + logFileName,
+            format = '%(asctime)s %(levelname)s %(message)s',
+            level = logging.INFO
+        )
 
-# generate progress bar
-displayProgressBar('Searching target email', 0)
+    # gahter outlook user inforamtion
+    outlook = win32.Dispatch('outlook.application')
+    mapi = outlook.GetNamespace("MAPI")
 
-# select emails in 24 hours and judge whether there is expire password or not
-for i in range(len(mapi.Folders)) :
-    root_folder = mapi.Folders[i].Folders[1]
-    category = traverseFolders(root_folder, datetime, timedelta)
+    # generate progress bar
+    displayProgressBar('Searching target email', 0)
 
-    # generate progress bar(progress bar is accroding to how many top folders you have and will calculate every time it will increase)
-    displayProgressBar('Searching target email', (100 / len(mapi.Folders)) * (i + 1))
+    # select emails in 24 hours and judge whether there is expire password or not
+    for i in range(len(mapi.Folders)) :
+        root_folder = mapi.Folders[i].Folders[1]
+        category = traverseFolders(root_folder, datetime, timedelta)
 
-# 0 days
-if category == 'change' :
-    try :
+        # generate progress bar(progress bar is accroding to how many top folders you have and will calculate every time it will increase)
+        displayProgressBar('Searching target email', (100 / len(mapi.Folders)) * (i + 1))
+
+    # 0 days
+    if category == 'change' :
         # writing log text
         logging.info('password will expire in 0 day, password need to change')
 
@@ -112,7 +114,7 @@ if category == 'change' :
         connection.close()
 
         # synchronize changing config file's password information
-        rewriteIni(config, newPassword)
+        rewriteJson(config, newPassword)
 
         # generate progress bar
         displayProgressBar('Writing csv', 0)
@@ -132,14 +134,9 @@ if category == 'change' :
         
         # as the sentence say
         input('Press Enter to exit...')
-        
 
-    except Exception as e:
-        logging.error(e)
-
-# less than 0 days
-elif category == 'brutal' :
-    try :
+    # less than 0 days
+    elif category == 'brutal' :
         # writing log text
         logging.info('Password will expire in less than 0 days, password need to change')
 
@@ -197,7 +194,7 @@ elif category == 'brutal' :
         connection.close()
 
         # synchronize changing config file's password information
-        rewriteIni(config, newPassword)
+        rewriteJson(config, newPassword)
         
         # generate progress bar
         displayProgressBar('Writing csv', 0)
@@ -218,19 +215,19 @@ elif category == 'brutal' :
         # as the sentence say
         input('Press Enter to exit...')
 
-    except Exception as e:
-        logging.error(e)
+    else:
+        # writing log text
+        logging.info('Password not yet to change')
 
-else:
-    # writing log text
-    logging.info('Password not yet to change')
+        # print result
+        print('Password not yet to change\n')
 
-    # print result
-    print('Password not yet to change\n')
+        # sending email about the result
+        if emailSendYesNo == 'yes':
+            sendingEmail('Password not yet to change', email, outlook)
 
-    # sending email about the result
-    if emailSendYesNo == 'yes':
-        sendingEmail('Password not yet to change', email, outlook)
+        # as the sentence say
+        input('Press Enter to exit...')
 
-    # as the sentence say
-    input('Press Enter to exit...')
+except Exception as e:
+    print(e)
