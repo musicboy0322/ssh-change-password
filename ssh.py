@@ -76,16 +76,15 @@ try:
 
         quit()
 
-    # as it say, generate random password
-
-    #newPassword = 'twm09350935'
-
+    # this loop is to traverse target email
     for k in range(len(targetMail)):
         # category
         category = targetMail[k][1]
 
         # targetUserName
         targetUserName = targetMail[k][0]
+
+        # this loop is to find
         for c in range(len(config['TARGET'])):
             if targetUserName == config['TARGET'][c]['username']:
                 # get config information(target server)
@@ -93,6 +92,8 @@ try:
                 password = config['TARGET'][c]['password']
                 hostname = config['TARGET'][c]['hostname']
                 port = config['TARGET'][c]['port']
+
+                # as it say, generate random new password
                 newPassword = generateRandomPassword()
                 
                 # 0 days
@@ -139,7 +140,7 @@ try:
                     connection.close()
 
                     # synchronize changing config file's password information
-                    rewriteJson(config, newPassword, k)
+                    rewriteJson(config, newPassword, c)
 
                     # generate progress bar
                     displayProgressBar('Writing csv', 0)
@@ -219,7 +220,7 @@ try:
                     connection.close()
 
                     # synchronize changing config file's password information
-                    rewriteJson(config, newPassword, k)
+                    rewriteJson(config, newPassword, c)
                     
                     # generate progress bar
                     displayProgressBar('Writing csv', 0)
