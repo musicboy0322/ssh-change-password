@@ -1,0 +1,27 @@
+{
+    "TARGET": [
+        {
+            "username": "type your username",
+            "password": "type your password",
+            "hostname": "type your hostname",
+            "port": "type your port"
+        },
+        {
+            "username": "type your username",
+            "password": "type your password",
+            "hostname": "type your hostname",
+            "port": "type your port"
+        }
+    ],
+    "LOG": {
+        "filename": "type your log name, remember to add .log at the end",
+        "location": "type the absolute path you want to place the log file"
+    },
+    "SEND": {
+        "email": "type your outlook email",
+        "emailSendYesNo": "type yes or no"
+    },
+    "CSV": {
+        "filename": "type your csv name, remember to add .csv at the end"
+    }
+}
