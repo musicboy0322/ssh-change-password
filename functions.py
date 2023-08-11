@@ -6,6 +6,7 @@ import secrets
 import string
 import random
 import json 
+import time
 
 # used function
 def popResultWindow(text):
@@ -31,7 +32,6 @@ def writeCsv(csvFileName, date, hostname, port, username, newPassword) :
 
 def rewriteJson(config, newPassword, number):
     # synchronize changing config file's password information
-    print(number)
     config['TARGET'][number]['password'] = newPassword
 
     with open('config.json', 'w') as configFile:
@@ -58,14 +58,25 @@ def traverseFolders(folder, datetime, timedelta, targetMail):
         if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) == 0:
             # put text in [0] and put category in [1]
             temp = []
-            temp.append(str(msg).split(' ')[1])
+            # temporary
+            # temp.append(str(msg).split(' ')[1])
+
+            # official
+            temp.append(msg.body.split(':')[2].split(' ')[1].split('\r')[0])
+
             temp.append('change')
             targetMail.append(temp)
 
         if 'WARNING' in str(msg) and int(str(msg).split(' ')[8]) < 0:
             # put text in [0] and put category in [1]
             temp = []
-            temp.append(str(msg).split(' ')[1])
+
+            # temporary
+            # temp.append(str(msg).split(' ')[1])
+
+            # official
+            temp.append(msg.body.split(':')[2].split(' ')[1].split('\r')[0])
+            
             temp.append('brutal')
             targetMail.append(temp)
 
@@ -73,21 +84,28 @@ def traverseFolders(folder, datetime, timedelta, targetMail):
     for subfolder in subfolders:
         result = traverseFolders(subfolder, datetime, timedelta, targetMail)
 
+def displayProgressBar(bar, degree):
+    bar.next(degree)
+
+'''
 def displayProgressBar(barName, degree):
     # generate progress bar
     with ShadyBar(barName, max=100, suffix='%(percent)d%%') as bar:
-        bar.next(degree)
-        bar.finish()
+        for i in range(100) :
+            bar.next(i)
+'''
 
 def generateRandomPassword():
     # generate random password
     characters = string.ascii_letters + string.digits
+    punctuations = string.punctuation.replace('\\','')
+    punctuations = punctuations.replace('"','')
 
     password = [secrets.choice(string.ascii_uppercase),
                 secrets.choice(string.ascii_lowercase),
                 secrets.choice(string.digits),
-                secrets.choice(string.punctuation.replace('\\','')),
-                secrets.choice(string.punctuation.replace('\\',''))]
+                secrets.choice(punctuations),
+                secrets.choice(punctuations)]
 
     for i in range(5):
         password.extend(secrets.choice(characters))
